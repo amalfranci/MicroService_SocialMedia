@@ -83,6 +83,8 @@ app.use(
   })
 );
 
+// setting up proxy for out post service
+
 app.use(errorHandler)
 app.listen(PORT, () => {
   logger.info(`API Gateway is runnig on port ${PORT}`);
