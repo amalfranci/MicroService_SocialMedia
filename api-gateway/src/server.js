@@ -11,6 +11,7 @@ const { rateLimit } = require("express-rate-limit");
 const { RedisStore } = require("rate-limit-redis");
 const proxy = require("express-http-proxy");
 const errorHandler = require("./middleware/errorHandle.js");
+const validatedToken = require("./middleware/authMiddleware.js");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -83,7 +84,31 @@ app.use(
   })
 );
 
+
+
+
 // setting up proxy for out post service
+
+app.use('/v1/posts',validatedToken,proxy(process.env.POST_SERVICE_URL,{
+  ...proxyOption,
+  proxyReqOptDecorator:(proxyReqOpts,srcReq)=>{
+      proxyReqOpts.headers['Content-Type']='application/json';
+      proxyReqOpts.headers['x-user-id']=srcReq.user.userId
+
+    return proxyReqOpts
+
+},
+userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+  logger.info(
+    `Response recived from identity service :${proxyRes.statusCode}`
+  );
+
+  return proxyResData;
+},
+
+}))
+
+
 
 app.use(errorHandler)
 app.listen(PORT, () => {

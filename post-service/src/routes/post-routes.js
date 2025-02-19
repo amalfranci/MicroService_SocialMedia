@@ -7,6 +7,7 @@ const router = express.Router();
 router.use(authMiddleWare);
 
 router.post("/create-post", createPost);
+router.get("/get-all-posts", getPost);
 
 
 module.exports = router;

@@ -6,7 +6,7 @@ const logger = require("./utils/logger.js");
 const mongoose = require("mongoose");
 const Redis = require("ioredis");
 const postRoutes = require("./routes/post-routes.js");
-
+const {RateLimiterRedis} = require('rate-limiter-flexible')
 const errorHandler = require("./middleware/errorHandler.js");
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -24,6 +24,14 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+  const rateLimiter = new RateLimiterRedis({
+    storeClient:redisClient,
+    keyPrefix: 'middleware',
+    points: 10,
+    duration:1
+  })
+
+
 app.use((req, res, next) => {
   rateLimiter
     .consume(req.ip)
@@ -40,7 +48,7 @@ app.use((req, res, next) => {
 // ip based rate limitunf for senstive routes
 
 
-app.use("/api/post", (req, res,next) => {
+app.use("/api/posts", (req, res,next) => {
   req.redisClient= redisClient
   next()
 },postRoutes);
