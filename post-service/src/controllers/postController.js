@@ -3,6 +3,10 @@ const Post = require("../models/Post.js");
 const validatePostCreate = require("../utils/validation.js");
 
 const validateCache = async (req, input) => {
+  
+    const cacheKey = `posts:${input}`;
+    await req.redisClient.del(cacheKey);
+
   const keys = await req.redisClient.keys("posts:*");
   if (keys.length > 0) {
     await req.redisClient.del(keys);
@@ -39,7 +43,7 @@ const createPost = async (req, res) => {
   }
 };
 
-const getPost = async (req, res) => {
+const getPosts = async (req, res) => {
   try {
     const page = parseInt(req.query.page || 1);
     const limit = parseInt(req.query.limit || 10);
@@ -79,10 +83,54 @@ const getPost = async (req, res) => {
   }
 };
 
+
+const getPost = async (req, res) => {
+    try {
+      const postId = req.params.postId;
+      const cacheKey = `posts:${postId}`;
+      const chachedPost = await req.redisClient.get(cacheKey);
+    if (chachedPost) {
+      return res.json(JSON.parse(chachedPost));
+
+    }
+    const post = await Post.findById(postId);
+    if (!post) {
+        return res.status(404).json({
+            success: false,
+            message: "Post not found",
+        })
+    }
+    await req.redisClient.set(cacheKey, JSON.stringify(post), "EX", 6000);
+    res.json(post);
+   
+
+    } catch (error) {
+      logger.error("get post error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error occurred",
+      });
+    }
+  };
+
 const deletePost = async (req, res) => {
   try {
-    const { content, mediaIds } = req.body;
-  } catch (error) {
+  const post = await Post.findOneAndDelete({ _id: req.params.postId, user: req.user.userId });
+
+  if (!post) {
+    return res.status(404).json({
+        success: false,
+        message: "Post not found",
+
+    })
+  }
+  await validateCache(req, req.params.postId.toString());
+  return res.status(200).json({
+    success: true,
+    message: "Post deleted successfully",
+  })
+
+} catch (error) {
     logger.error("Delete post error:", error);
     res.status(500).json({
       success: false,
@@ -91,4 +139,4 @@ const deletePost = async (req, res) => {
   }
 };
 
-module.exports = { createPost, getPost, deletePost };
+module.exports = { createPost, getPosts, deletePost,getPost };
