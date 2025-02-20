@@ -6,8 +6,9 @@ const logger = require("./utils/logger.js");
 const mongoose = require("mongoose");
 const Redis = require("ioredis");
 const postRoutes = require("./routes/post-routes.js");
-const {RateLimiterRedis} = require('rate-limiter-flexible')
+const { RateLimiterRedis } = require("rate-limiter-flexible");
 const errorHandler = require("./middleware/errorHandler.js");
+const { connectRabbitMq } = require("./utils/rabbitmq.js");
 const app = express();
 const PORT = process.env.PORT || 3002;
 
@@ -24,13 +25,12 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-  const rateLimiter = new RateLimiterRedis({
-    storeClient:redisClient,
-    keyPrefix: 'middleware',
-    points: 10,
-    duration:1
-  })
-
+const rateLimiter = new RateLimiterRedis({
+  storeClient: redisClient,
+  keyPrefix: "middleware",
+  points: 10,
+  duration: 1,
+});
 
 app.use((req, res, next) => {
   rateLimiter
@@ -47,21 +47,33 @@ app.use((req, res, next) => {
 
 // ip based rate limitunf for senstive routes
 
-
-app.use("/api/posts", (req, res,next) => {
-  req.redisClient= redisClient
-  next()
-},postRoutes);
+app.use(
+  "/api/posts",
+  (req, res, next) => {
+    req.redisClient = redisClient;
+    next();
+  },
+  postRoutes
+);
 
 app.use(errorHandler);
 
-app.listen(PORT,()=>{
-    logger.info(`Post service is running on port http://localhost:${PORT}`)
-    console.log(`Post service connected on http://localhost:${PORT} SUCCESSFULLY`)
+async function startServer() {
+  try {
+    await connectRabbitMq();
+    app.listen(PORT, () => {
+      logger.info(`Post service is running on port http://localhost:${PORT}`);
+      console.log(
+        `Post service connected on http://localhost:${PORT} SUCCESSFULLY`
+      );
+    });
+  } catch (error) {
+    logger.error(`Failed to connect to server`, error);
+    process.exit(1);
+  }
+}
+startServer()
 
-})
-
-process.on('unhandledRejection',(reason,promise)=>{
-    logger.error('unhandledRejection at',promise,'reason:',reason)
-})
-
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("unhandledRejection at", promise, "reason:", reason);
+});

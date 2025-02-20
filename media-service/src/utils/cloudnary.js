@@ -1,10 +1,12 @@
 const cloudinary = require("cloudinary").v2;
 const logger = require("./logger.js");
+const dotenv = require('dotenv')
+dotenv.config()
 
 cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.API_KEY,
-  api_secret: process.env.API_SECRET,
+  cloud_name: "dswd4mkqr",
+  api_key: 441411524772134,
+  api_secret: "H75owZrdSjhlA0dNg4En2jGtURI",
 });
 
 const uploadImageCloudnary = (file) => {
@@ -26,5 +28,17 @@ const uploadImageCloudnary = (file) => {
   });
 };
 
+const deleteMediaFromCloudnary = async(publicId)=>{
+  try{
+   const result =  await cloudinary.uploader.destroy(publicId)
+   logger.info('media deleted successfully',publicId)
+   return result
+  }
+  catch(err)
+  {
+    throw err
+  }
 
-module.exports = { uploadImageCloudnary };
+}
+
+module.exports = { uploadImageCloudnary ,deleteMediaFromCloudnary};

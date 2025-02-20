@@ -10,20 +10,24 @@ const uploadMedia = async (req, res) => {
       });
     }
 
-    const { originalName, mimeType, buffer } = req.file;
+    const { originalName, mimetype, buffer } = req.file;
     const userId = req.user.userId;
 
     const cloudinaryUploadResult = await uploadImageCloudnary(req.file);
-
     const uploadData = new Media({
       publicId: cloudinaryUploadResult.public_id,
       originalName,
       url:cloudinaryUploadResult.secure_url,
-      mimeType,
+      mimeType: mimetype,
       userId
     });
 
-    uploadData.save();
+    await uploadData.save();
+
+    res.status(201).json({
+      message:'Image uploaded successfully',
+      success:true
+    })
   } catch (error) {
     logger.error("Upload media error:", error);
     res.json({

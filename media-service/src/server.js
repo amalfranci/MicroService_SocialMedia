@@ -3,23 +3,30 @@ const logger =  require("./utils/logger.js")
 const helmet = require("helmet");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
+dotenv.config();
 const Redis = require("ioredis");
 const { rateLimit } = require("express-rate-limit");
 const { RateLimiterRedis } = require("rate-limiter-flexible");
-dotenv.config();
+
 const app = express();
 const cors = require("cors");
 const { RedisStore } = require("rate-limit-redis");
 const errorHandler = require("./middleware/errorHandler.js");
 const PORT = process.env.PORT || 3003;
+const mediaRoutes = require('../src/routes/media-routes.js');
+const { connectRabbitMq, consumeEvent } = require("./utils/rabbitmq.js");
+const { handlePostDeleted } = require("./eventHandler/mediaEventHandler.js");
+
 
 mongoose
-  .connect(process.env.MONGODBURL, {
+  .connect("mongodb+srv://amalfrancis:Amal%40123@cluster0.gngsj.mongodb.net/mydatabase?retryWrites=true&w=majority", {
     useNewUrlParser: true,
-    useUnifiedTopology: true,
+    useUnifiedTopology: true
   })
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((error) => console.error("MongoDB connection failed:", error.message));
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((error) => console.error('MongoDB connection failed:', error.message));
+  
+  
   const redisClient = new Redis(process.env.REDIS_URL);
 
 app.use(helmet());
@@ -53,16 +60,28 @@ app.use((req, res, next) => {
     });
 });
 
-
+app.use('/api/media',mediaRoutes)
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  logger.info(`Identity service is running on port http://localhost:${PORT}`);
-  console.log(
-    `Identity server connected on http://localhost:${PORT} SUCCESSFULLY`
-  );
-});
+async function startServer() {
+  try {
+    await connectRabbitMq();
+
+    await consumeEvent('post.deleted',handlePostDeleted)
+    app.listen(PORT, () => {
+      logger.info(`Media service is running on port http://localhost:${PORT}`);
+      console.log(
+        `Post service connected on http://localhost:${PORT} SUCCESSFULLY`
+      );
+    });
+  } catch (error) {
+    logger.error(`Failed to connect to server`, error);
+    process.exit(1);
+  }
+}
+startServer()
+
 
 process.on("unhandledRejection", (reason, promise) => {
   logger.error("unhandledRejection at", promise, "reason:", reason);

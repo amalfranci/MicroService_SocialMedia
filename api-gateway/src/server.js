@@ -26,7 +26,6 @@ app.use((req, res, next) => {
   next();
 });
 
-
 // rate limiting
 
 const rateLimiter = rateLimit({
@@ -84,33 +83,55 @@ app.use(
   })
 );
 
-
-
-
 // setting up proxy for out post service
 
-app.use('/v1/posts',validatedToken,proxy(process.env.POST_SERVICE_URL,{
-  ...proxyOption,
-  proxyReqOptDecorator:(proxyReqOpts,srcReq)=>{
-      proxyReqOpts.headers['Content-Type']='application/json';
-      proxyReqOpts.headers['x-user-id']=srcReq.user.userId
+app.use(
+  "/v1/posts",
+  validatedToken,
+  proxy(process.env.POST_SERVICE_URL, {
+    ...proxyOption,
+    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+      proxyReqOpts.headers["Content-Type"] = "application/json";
+      proxyReqOpts.headers["x-user-id"] = srcReq.user.userId;
 
-    return proxyReqOpts
+      return proxyReqOpts;
+    },
+    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+      logger.info(
+        `Response recived from postservice :${proxyRes.statusCode}`
+      );
 
-},
-userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
-  logger.info(
-    `Response recived from identity service :${proxyRes.statusCode}`
-  );
+      return proxyResData;
+    },
+  })
+);
 
-  return proxyResData;
-},
+// setting up proxy for out Media service
 
-}))
+app.use(
+  "/v1/media",
+  validatedToken,
+  proxy(process.env.MEDIA_SERVICE_URL, {
+    ...proxyOption,
+    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+      proxyReqOpts.headers["x-user-id"] = srcReq.user.userId;
+      if (!srcReq.headers["content-type"].startsWith("multipart/form-data")) {
+        proxyReqOpts.headers["Content-Type"] = "application/json";
+      }
+      return proxyReqOpts
+    },
+    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+      logger.info(
+        `Response recived from Media  service :${proxyRes.statusCode}`
+      );
 
+      return proxyResData;
+    },
+    parseReqBody:false
+  })
+);
 
-
-app.use(errorHandler)
+app.use(errorHandler);
 app.listen(PORT, () => {
   logger.info(`API Gateway is runnig on port ${PORT}`);
   logger.info(

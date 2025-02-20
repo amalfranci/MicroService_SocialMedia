@@ -22,8 +22,8 @@ mongoose
   })
   .then(() => console.log('Connected to MongoDB'))
   .catch((error) => console.error('MongoDB connection failed:', error.message));
-  const redisClient = new Redis(process.env.REDIS_URL)
   
+  const redisClient = new Redis(process.env.REDIS_URL)
   app.use(helmet())
   app.use(cors())
   app.use(express.json())
