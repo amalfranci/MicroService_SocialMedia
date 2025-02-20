@@ -7,8 +7,11 @@ const mongoose = require("mongoose");
 const Redis = require("ioredis");
 const { RateLimiterRedis } = require("rate-limiter-flexible");
 const errorHandler = require("./middleware/errorHandler.js");
-const { connectRabbitMq } = require("./utils/rabbitmq.js");
+const { connectRabbitMq, consumeEvent } = require("./utils/rabbitmq.js");
 const app = express();
+
+const serachRoutes = require("../src/routes/Search-Routes.js");
+const { handlePostSearchEven, handlePostSearchDelete } = require("./eventHandler/mediaEventHandler.js");
 const PORT = process.env.PORT || 3004;
 
 mongoose
@@ -24,31 +27,37 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 const rateLimiter = new RateLimiterRedis({
-    storeClient: redisClient,
-    keyPrefix: "middleware",
-    points: 10,
-    duration: 1,
-  });
-  
-  app.use((req, res, next) => {
-    rateLimiter
-      .consume(req.ip)
-      .then(() => next())
-      .catch(() => {
-        logger.warn(`Rate limit request exceeds for Ip:  ${req.ip}`);
-        res.status(429).json({
-          success: false,
-          message: "To many request",
-        });
-      });
-  });
+  storeClient: redisClient,
+  keyPrefix: "middleware",
+  points: 10,
+  duration: 1,
+});
 
-  
-  app.use(errorHandler);
+app.use((req, res, next) => {
+  rateLimiter
+    .consume(req.ip)
+    .then(() => next())
+    .catch(() => {
+      logger.warn(`Rate limit request exceeds for Ip:  ${req.ip}`);
+      res.status(429).json({
+        success: false,
+        message: "To many request",
+      });
+    });
+});
+app.use("/api/search", serachRoutes);
+
+app.use(errorHandler);
 
 async function startServer() {
   try {
     await connectRabbitMq();
+
+ // consume the events / subscribe the event
+ 
+   await consumeEvent('post.created',handlePostSearchEven)
+   await consumeEvent('post.deleted',handlePostSearchDelete)
+
     app.listen(PORT, () => {
       logger.info(`Search service is running on port http://localhost:${PORT}`);
       console.log(
@@ -60,7 +69,7 @@ async function startServer() {
     process.exit(1);
   }
 }
-startServer()
+startServer();
 
 process.on("unhandledRejection", (reason, promise) => {
   logger.error("unhandledRejection at", promise, "reason:", reason);

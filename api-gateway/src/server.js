@@ -131,11 +131,38 @@ app.use(
   })
 );
 
+
+// setting up proxy for out Search service
+
+app.use(
+  "/v1/search",
+  validatedToken,
+  proxy(process.env.SEARCH_SERVICE_URL, {
+    ...proxyOption,
+    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+      proxyReqOpts.headers["Content-Type"] = "application/json";
+      proxyReqOpts.headers["x-user-id"] = srcReq.user.userId;
+
+      return proxyReqOpts;
+    },
+    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+      logger.info(
+        `Response recived from Search  service :${proxyRes.statusCode}`
+      );
+
+      return proxyResData;
+    },
+  })
+);
+
+
+
 app.use(errorHandler);
 app.listen(PORT, () => {
   logger.info(`API Gateway is runnig on port ${PORT}`);
   logger.info(
     `Identity service is  runnig on port ${process.env.IDENTITY_SERVICE_URL}`
   );
+  
   logger.info(`Redis Url is runnig on port ${process.env.REDIS_URL}`);
 });

@@ -18,18 +18,23 @@ async function connectRabbitMq() {
     logger.error("Error to connect RabbitMql");
   }
 }
-
-async function publishEvent(routingKey, message) {
+async function consumeEvent(routingKey, callback) {
   if (!channel) {
     await connectRabbitMq();
   }
-  channel.publish(
-    EXCHANGE_NAME,
-    routingKey,
-    Buffer.from(JSON.stringify(message))
-  );
 
-  logger.info(`EVENT publish :${routingKey}`);
+  const q = await channel.assertQueue("", { exclusive: true });
+  await channel.bindQueue(q.queue, EXCHANGE_NAME, routingKey);
+  channel.consume(q.queue, (msg) => {
+    if (msg !== null) {
+      const content = JSON.parse(msg.content.toString());
+      callback(content);
+      channel.ack(msg);
+    }
+  });
+  logger.info(`Subscribed to event: ${routingKey}`)
 }
 
-module.exports = { connectRabbitMq, publishEvent };
+
+
+module.exports = { connectRabbitMq,consumeEvent };

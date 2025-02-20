@@ -10,6 +10,7 @@ const handlePostDeleted = async (event) => {
 
     // Validate results
     if (!mediaToDelete.length) {
+    
     }
 
     for (const media of mediaToDelete) {
