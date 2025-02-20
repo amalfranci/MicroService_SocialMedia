@@ -11,7 +11,10 @@ const { connectRabbitMq, consumeEvent } = require("./utils/rabbitmq.js");
 const app = express();
 
 const serachRoutes = require("../src/routes/Search-Routes.js");
-const { handlePostSearchEven, handlePostSearchDelete } = require("./eventHandler/mediaEventHandler.js");
+const {
+  handlePostSearchEven,
+  handlePostSearchDelete,
+} = require("./eventHandler/mediaEventHandler.js");
 const PORT = process.env.PORT || 3004;
 
 mongoose
@@ -45,6 +48,14 @@ app.use((req, res, next) => {
       });
     });
 });
+app.use(
+  "/api/search",
+  (req, res, next) => {
+    req.redisClient = redisClient;
+    next();
+  },
+  serachRoutes
+);
 app.use("/api/search", serachRoutes);
 
 app.use(errorHandler);
@@ -53,10 +64,10 @@ async function startServer() {
   try {
     await connectRabbitMq();
 
- // consume the events / subscribe the event
- 
-   await consumeEvent('post.created',handlePostSearchEven)
-   await consumeEvent('post.deleted',handlePostSearchDelete)
+    // consume the events / subscribe the event
+
+    await consumeEvent("post.created", handlePostSearchEven);
+    await consumeEvent("post.deleted", handlePostSearchDelete);
 
     app.listen(PORT, () => {
       logger.info(`Search service is running on port http://localhost:${PORT}`);

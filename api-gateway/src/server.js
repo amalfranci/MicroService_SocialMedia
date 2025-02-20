@@ -97,9 +97,7 @@ app.use(
       return proxyReqOpts;
     },
     userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
-      logger.info(
-        `Response recived from postservice :${proxyRes.statusCode}`
-      );
+      logger.info(`Response recived from postservice :${proxyRes.statusCode}`);
 
       return proxyResData;
     },
@@ -118,7 +116,7 @@ app.use(
       if (!srcReq.headers["content-type"].startsWith("multipart/form-data")) {
         proxyReqOpts.headers["Content-Type"] = "application/json";
       }
-      return proxyReqOpts
+      return proxyReqOpts;
     },
     userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
       logger.info(
@@ -127,10 +125,9 @@ app.use(
 
       return proxyResData;
     },
-    parseReqBody:false
+    parseReqBody: false,
   })
 );
-
 
 // setting up proxy for out Search service
 
@@ -155,14 +152,12 @@ app.use(
   })
 );
 
-
-
 app.use(errorHandler);
 app.listen(PORT, () => {
   logger.info(`API Gateway is runnig on port ${PORT}`);
   logger.info(
     `Identity service is  runnig on port ${process.env.IDENTITY_SERVICE_URL}`
   );
-  
+
   logger.info(`Redis Url is runnig on port ${process.env.REDIS_URL}`);
 });

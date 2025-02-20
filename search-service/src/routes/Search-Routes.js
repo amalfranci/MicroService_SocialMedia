@@ -1,11 +1,9 @@
-const express =require('express')
-const { SerachPostController } = require('../controllers/SearchController')
-const authMiddleWare = require('../middleware/authMiddleWare')
+const express = require("express");
+const { SerachPostController } = require("../controllers/SearchController");
+const authMiddleWare = require("../middleware/authMiddleWare");
 
-const router = express.Router()
+const router = express.Router();
 
-router.get('/posts',authMiddleWare,SerachPostController)
+router.get("/posts", authMiddleWare, SerachPostController);
 
-
-
-module.exports = router
+module.exports = router;
