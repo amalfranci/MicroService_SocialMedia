@@ -5,7 +5,6 @@ const helmet = require("helmet");
 const logger = require("./utils/logger.js");
 const mongoose = require("mongoose");
 const Redis = require("ioredis");
-const postRoutes = require("./routes/post-routes.js");
 const { RateLimiterRedis } = require("rate-limiter-flexible");
 const errorHandler = require("./middleware/errorHandler.js");
 const { connectRabbitMq } = require("./utils/rabbitmq.js");
@@ -51,9 +50,9 @@ async function startServer() {
   try {
     await connectRabbitMq();
     app.listen(PORT, () => {
-      logger.info(`Post service is running on port http://localhost:${PORT}`);
+      logger.info(`Search service is running on port http://localhost:${PORT}`);
       console.log(
-        `Post service connected on http://localhost:${PORT} SUCCESSFULLY`
+        `Search service connected on http://localhost:${PORT} SUCCESSFULLY`
       );
     });
   } catch (error) {
