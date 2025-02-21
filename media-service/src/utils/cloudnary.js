@@ -4,9 +4,9 @@ const dotenv = require('dotenv')
 dotenv.config()
 
 cloudinary.config({
-  cloud_name: "dswd4mkqr",
-  api_key: 441411524772134,
-  api_secret: "H75owZrdSjhlA0dNg4En2jGtURI",
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET
 });
 
 const uploadImageCloudnary = (file) => {
