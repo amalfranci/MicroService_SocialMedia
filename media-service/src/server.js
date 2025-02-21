@@ -19,7 +19,7 @@ const { handlePostDeleted } = require("./eventHandler/mediaEventHandler.js");
 
 
 mongoose
-  .connect(process.env.MONGODBURL, {
+  .connect("mongodb+srv://amalfrancis:Amal%40123@cluster0.gngsj.mongodb.net/mydatabase?retryWrites=true&w=majority", {
     useNewUrlParser: true,
     useUnifiedTopology: true
   })
