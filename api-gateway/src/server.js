@@ -15,6 +15,10 @@ const validatedToken = require("./middleware/authMiddleware.js");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.get("/",(req,res)=>{
+  res.send("wow from the BaCKEND AMAL")
+})
+
 const redisClient = new Redis(process.env.REDIS_URL);
 app.use(helmet());
 app.use(cors());

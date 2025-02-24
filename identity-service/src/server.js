@@ -36,7 +36,6 @@ mongoose
   })
 
   //DDos protection and rate limiting
-
   const rateLimiter = new RateLimiterRedis({
     storeClient:redisClient,
     keyPrefix: 'middleware',
@@ -50,7 +49,6 @@ mongoose
         res.status(429).json({
             success:false,
             message:"To many request"
-
         })
     })
   })
@@ -62,12 +60,10 @@ const senestiveEndPointsLimiter = rateLimit({
     standardHeaders:true,
     legacyHeaders:false,
     handler:(req,res)=>{
-
         logger.warn(`sensitive endpoints rate limit exceeds for IP: ${req.ip}`)
         res.status(429).json({
             success:false,
             message:"To many request"
-
         })
     },
     store:new RedisStore({
@@ -80,7 +76,6 @@ app.get("/", (req, res) => {
   
 
 // apply this senstitive for route
-
 app.use('/api/auth/register',senestiveEndPointsLimiter)
 app.use('/api/auth',routes)
 
